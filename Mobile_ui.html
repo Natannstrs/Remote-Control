@@ -1,96 +1,351 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="utf-8" />
   <title>Remote Control</title>
   <style>
-    body {font-family: sans-serif; text-align:center; margin:20px;}
-    button {padding:12px; margin:5px; width:45%;}
-    #pad {background:#eee; height:250px; margin:10px 0; touch-action:none;}
-    input {padding:8px; width:90%; margin:6px 0;}
+    :root{
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --primary: #2563eb;
+      --muted: #6b7280;
+      --accent: #10b981;
+      --pad-height: 300px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:18px;
+      font-family: Inter, system-ui, -apple-system, "Poppins", sans-serif;
+      background:var(--bg); color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+    }
+    .container{
+      max-width:980px; margin:0 auto; display:flex; gap:18px;
+      align-items:flex-start;
+    }
+
+    /* Left column (controls) */
+    .left {
+      flex:1;
+      min-width:260px;
+    }
+    header h1{font-size:18px;margin:0 0 6px}
+    header p{margin:0;color:var(--muted);font-size:13px}
+
+    .card {
+      background:var(--card);
+      border-radius:12px;
+      padding:14px;
+      box-shadow:0 6px 18px rgba(15,23,42,0.06);
+      margin-top:12px;
+    }
+
+    /* touchpad */
+    #pad {
+      background: linear-gradient(180deg,#fff,#fbfdff);
+      border-radius:10px;
+      height:var(--pad-height);
+      border:1px solid rgba(15,23,42,0.04);
+      touch-action: none;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--muted); font-weight:600;
+      user-select:none;
+    }
+
+    /* buttons */
+    .row{display:flex; gap:10px; margin-top:12px;}
+    button {
+      flex:1;
+      padding:12px 10px;
+      border-radius:8px;
+      border:none;
+      font-weight:600;
+      background:var(--primary);
+      color:white;
+      box-shadow:0 4px 10px rgba(37,99,235,0.18);
+      transition:transform .12s ease, box-shadow .12s;
+    }
+    button.secondary {
+      background:#f3f4f6; color:#111827; box-shadow:none; border:1px solid rgba(15,23,42,0.06);
+    }
+    button:active{ transform:translateY(1px) }
+
+    /* input */
+    input[type="text"], input[type="password"]{
+      width:100%; padding:10px 12px; margin-top:10px;
+      border-radius:8px; border:1px solid #e6e9ef;
+    }
+
+    /* right column (joystick) */
+    .right {
+      width:120px;
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    .joystick-wrap{
+      width:96px; height:240px;
+      background: linear-gradient(180deg,#ffffff,#f8fbff);
+      border-radius:14px;
+      box-shadow:0 8px 20px rgba(15,23,42,0.06);
+      padding:14px; display:flex; align-items:center; justify-content:center;
+      flex-direction:column;
+      gap:12px;
+    }
+    .js-label{font-size:12px;color:var(--muted);font-weight:600}
+
+    .joystick-area{
+      width:64px; height:160px;
+      background: linear-gradient(180deg,#f1f5f9,#fff);
+      border-radius:999px;
+      position:relative;
+      display:flex; align-items:center; justify-content:center;
+      border:1px solid rgba(15,23,42,0.04);
+      touch-action:none;
+    }
+
+    .joy-thumb{
+      width:48px; height:48px; border-radius:50%;
+      background:var(--primary); box-shadow:0 6px 14px rgba(37,99,235,0.22);
+      display:flex; align-items:center; justify-content:center;
+      color:white; font-weight:700; user-select:none;
+      position:absolute; transition:transform .06s linear;
+      transform: translateY(0);
+      touch-action:none;
+    }
+
+    .info{font-size:12px;color:var(--muted);margin-top:8px;text-align:center}
+
+    /* screenshot preview */
+    #ss img{width:100%; border-radius:8px; margin-top:10px}
+
+    /* small screens */
+    @media (max-width:700px){
+      .container{flex-direction:column}
+      .right{width:100%; order:2}
+      .joystick-wrap{width:100%; flex-direction:row; height:84px; gap:12px; padding:10px}
+      .joystick-area{width:64px; height:64px; border-radius:12px}
+      .joy-thumb{width:40px; height:40px}
+    }
   </style>
 </head>
 <body>
-  <h3>Remote Control for Laptop</h3>
-  <input id="token" placeholder="Masukkan token" />
-  <button onclick="connect()">Connect</button>
-  <p id="status"></p>
+  <div class="container">
+    <div class="left">
+      <header>
+        <h1>Remote Control for Laptop</h1>
+        <p>Kontrol laptop anda sesuka hati 😊</p>
+      </header>
 
-  <div id="pad">Geser jari di sini untuk gerakkan mouse</div>
+      <div class="card">
+        <input id="token" type="password" placeholder="Masukkan token" />
+        <div class="row">
+          <button id="btnConnect">Connect</button>
+          <button id="btnStatus" class="secondary">Status</button>
+        </div>
 
-  <div>
-    <button onclick="clickBtn('left')">Klik Kiri</button>
-    <button onclick="clickBtn('right')">Klik Kanan</button>
+        <div id="pad" class="pad">Geser jari di sini untuk menggerakkan mouse</div>
+
+        <div class="row">
+          <button onclick="clickBtn('left')">Klik Kiri</button>
+          <button onclick="clickBtn('right')">Klik Kanan</button>
+        </div>
+
+        <input id="text" type="text" placeholder="Ketik teks di sini">
+        <div class="row">
+          <button onclick="typeText()">Kirim</button>
+          <button onclick="pressEnter()">Enter</button>
+        </div>
+
+        <div class="row">
+          <button onclick="takeScreenshot()">Screenshot</button>
+          <button onclick="shutdown()" class="secondary">Matikan Laptop</button>
+        </div>
+
+        <div id="ss"></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="joystick-wrap card" aria-hidden="false">
+        <div class="js-label">Scroll (vertikal)</div>
+        <div id="joystickArea" class="joystick-area" role="application" aria-label="Joystick scroll">
+          <div id="joy" class="joy-thumb">⇅</div>
+        </div>
+        <div class="info">Geser ke atas/bawah untuk scroll</div>
+      </div>
+    </div>
   </div>
-
-  <input id="text" placeholder="Ketik teks di sini">
-  <button onclick="typeText()">Kirim</button>
-  <button onclick="pressEnter()">Enter</button>
-
-  <div>
-    <button onclick="takeScreenshot()">Screenshot</button>
-    <button onclick="shutdown()">Matikan Laptop</button>
-  </div>
-
-  <div id="ss"></div>
 
 <script>
+
 let token = '';
-const base = '';
+const base = ''; 
 function getUrl(path){ return base + path + '?token=' + encodeURIComponent(token); }
 
-function connect(){ 
-  token = document.getElementById('token').value;
+/* Connect */
+document.getElementById('btnConnect').addEventListener('click', connect);
+const statusBtn = document.getElementById('btnStatus');
+
+function connect(){
+  token = document.getElementById('token').value || '';
+  if(!token){ alert('Masukkan token terlebih dahulu'); return; }
   fetch(getUrl('/api/ping'))
-    .then(r => r.json())
-    .then(j => document.getElementById('status').innerText = 'Terhubung: ' + j.time)
-    .catch(()=>document.getElementById('status').innerText='Gagal konek!');
+    .then(r => {
+      if(!r.ok) throw new Error('401');
+      return r.json();
+    })
+    .then(j => {
+      statusBtn.innerText = 'Terhubung: ' + new Date(j.time).toLocaleString();
+      statusBtn.classList.remove('secondary');
+    })
+    .catch(()=> {
+      statusBtn.innerText = 'Gagal konek!';
+      statusBtn.classList.add('secondary');
+    });
 }
 
 const pad = document.getElementById('pad');
-let lastX, lastY, dragging = false;
+let lastX = 0, lastY = 0, dragging = false;
+
 pad.addEventListener('touchstart', e => {
   e.preventDefault();
+  if(e.touches.length > 1) return; 
   dragging = true;
   lastX = e.touches[0].clientX;
   lastY = e.touches[0].clientY;
 });
+
 pad.addEventListener('touchmove', e => {
   if(!dragging) return;
   const t = e.touches[0];
-  const dx = t.clientX - lastX;
-  const dy = t.clientY - lastY;
+  const dx = Math.round(t.clientX - lastX);
+  const dy = Math.round(t.clientY - lastY);
   lastX = t.clientX; lastY = t.clientY;
-  fetch(getUrl('/api/mouse/rel'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dx,dy})});
+
+  fetch(getUrl('/api/mouse/rel'), {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({dx, dy})
+  }).catch(()=>{});
 });
-pad.addEventListener('touchend', ()=>dragging=false);
+
+pad.addEventListener('touchend', e => {
+  dragging = false;
+});
+
 
 function clickBtn(button){
-  fetch(getUrl('/api/mouse/click'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({button})});
+  fetch(getUrl('/api/mouse/click'), {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({button})
+  }).catch(()=>{});
 }
 
 function typeText(){
-  const text=document.getElementById('text').value;
-  fetch(getUrl('/api/keyboard/type'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text})});
+  const text = document.getElementById('text').value || '';
+  fetch(getUrl('/api/keyboard/type'), {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({text})
+  }).catch(()=>{});
 }
-
 function pressEnter(){
-  fetch(getUrl('/api/keyboard/press'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key:'enter'})});
+  fetch(getUrl('/api/keyboard/press'), {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({key:'enter'})
+  }).catch(()=>{});
 }
 
 function takeScreenshot(){
-  fetch(getUrl('/api/screenshot')).then(r=>r.blob()).then(b=>{
-    const url=URL.createObjectURL(b);
-    document.getElementById('ss').innerHTML='<img src="'+url+'" style="width:100%;margin-top:10px">';
-  });
+  fetch(getUrl('/api/screenshot'))
+    .then(r=> {
+      if(!r.ok) throw new Error('fetch screenshot failed');
+      return r.blob();
+    })
+    .then(b=>{
+      const url = URL.createObjectURL(b);
+      document.getElementById('ss').innerHTML = '<img src="'+url+'">';
+    })
+    .catch(()=> alert('Gagal mengambil screenshot'));
 }
+
 
 function shutdown(){
   if(confirm("Matikan laptop?")){
-    fetch(getUrl('/api/shutdown'), {method:'POST'});
-    alert("Perintah shutdown dikirim");
+    fetch(getUrl('/api/shutdown'), {method:'POST'})
+      .then(()=> alert("Perintah shutdown dikirim"))
+      .catch(()=> alert("Gagal mengirim perintah"));
   }
 }
+
+const joystickArea = document.getElementById('joystickArea');
+const joy = document.getElementById('joy');
+
+let jsActive = false;
+let centerY = 0;
+let maxRange = 60; 
+let lastSent = 0;
+
+function resetThumb(){
+  joy.style.transform = 'translateY(0px)';
+}
+
+function sendScroll(dy){
+  const now = Date.now();
+  if(Math.abs(dy - lastSent) < 4 && (now - (joy._lastTime||0)) < 60) return;
+  lastSent = dy;
+  joy._lastTime = now;
+  fetch(getUrl('/api/mouse/scroll'), {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({dy})
+  }).catch(()=>{});
+}
+
+joystickArea.addEventListener('touchstart', (e)=>{
+  e.preventDefault();
+  jsActive = true;
+  const rect = joystickArea.getBoundingClientRect();
+  centerY = rect.top + rect.height/2;
+});
+
+joystickArea.addEventListener('touchmove', (e)=>{
+  if(!jsActive) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  let dist = t.clientY - centerY;
+  if(dist > maxRange) dist = maxRange;
+  if(dist < -maxRange) dist = -maxRange;
+
+  joy.style.transform = 'translateY(' + dist + 'px)';
+  const normalized = Math.round((dist / maxRange) * 100);
+  sendScroll(normalized);
+});
+
+joystickArea.addEventListener('touchend', (e)=>{
+  jsActive = false;
+  resetThumb();
+  sendScroll(0);
+});
+
+joystickArea.addEventListener('mousedown', (e)=>{
+  e.preventDefault();
+  jsActive = true;
+  const rect = joystickArea.getBoundingClientRect();
+  centerY = rect.top + rect.height/2;
+});
+document.addEventListener('mousemove', (e)=>{
+  if(!jsActive) return;
+  let dist = e.clientY - centerY;
+  if(dist > maxRange) dist = maxRange;
+  if(dist < -maxRange) dist = -maxRange;
+  joy.style.transform = 'translateY(' + dist + 'px)';
+  const normalized = Math.round((dist / maxRange) * 100);
+  sendScroll(normalized);
+});
+document.addEventListener('mouseup', (e)=>{
+  if(!jsActive) return;
+  jsActive = false; resetThumb(); sendScroll(0);
+});
 </script>
 </body>
 </html>
