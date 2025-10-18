@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Remote Control</title>
+  <style>
+    body {font-family: sans-serif; text-align:center; margin:20px;}
+    button {padding:12px; margin:5px; width:45%;}
+    #pad {background:#eee; height:250px; margin:10px 0; touch-action:none;}
+    input {padding:8px; width:90%; margin:6px 0;}
+  </style>
+</head>
+<body>
+  <h3>Remote Control for Laptop</h3>
+  <input id="token" placeholder="Masukkan token" />
+  <button onclick="connect()">Connect</button>
+  <p id="status"></p>
+
+  <div id="pad">Geser jari di sini untuk gerakkan mouse</div>
+
+  <div>
+    <button onclick="clickBtn('left')">Klik Kiri</button>
+    <button onclick="clickBtn('right')">Klik Kanan</button>
+  </div>
+
+  <input id="text" placeholder="Ketik teks di sini">
+  <button onclick="typeText()">Kirim</button>
+  <button onclick="pressEnter()">Enter</button>
+
+  <div>
+    <button onclick="takeScreenshot()">Screenshot</button>
+    <button onclick="shutdown()">Matikan Laptop</button>
+  </div>
+
+  <div id="ss"></div>
+
+<script>
+let token = '';
+const base = '';
+function getUrl(path){ return base + path + '?token=' + encodeURIComponent(token); }
+
+function connect(){ 
+  token = document.getElementById('token').value;
+  fetch(getUrl('/api/ping'))
+    .then(r => r.json())
+    .then(j => document.getElementById('status').innerText = 'Terhubung: ' + j.time)
+    .catch(()=>document.getElementById('status').innerText='Gagal konek!');
+}
+
+const pad = document.getElementById('pad');
+let lastX, lastY, dragging = false;
+pad.addEventListener('touchstart', e => {
+  e.preventDefault();
+  dragging = true;
+  lastX = e.touches[0].clientX;
+  lastY = e.touches[0].clientY;
+});
+pad.addEventListener('touchmove', e => {
+  if(!dragging) return;
+  const t = e.touches[0];
+  const dx = t.clientX - lastX;
+  const dy = t.clientY - lastY;
+  lastX = t.clientX; lastY = t.clientY;
+  fetch(getUrl('/api/mouse/rel'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dx,dy})});
+});
+pad.addEventListener('touchend', ()=>dragging=false);
+
+function clickBtn(button){
+  fetch(getUrl('/api/mouse/click'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({button})});
+}
+
+function typeText(){
+  const text=document.getElementById('text').value;
+  fetch(getUrl('/api/keyboard/type'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text})});
+}
+
+function pressEnter(){
+  fetch(getUrl('/api/keyboard/press'), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key:'enter'})});
+}
+
+function takeScreenshot(){
+  fetch(getUrl('/api/screenshot')).then(r=>r.blob()).then(b=>{
+    const url=URL.createObjectURL(b);
+    document.getElementById('ss').innerHTML='<img src="'+url+'" style="width:100%;margin-top:10px">';
+  });
+}
+
+function shutdown(){
+  if(confirm("Matikan laptop?")){
+    fetch(getUrl('/api/shutdown'), {method:'POST'});
+    alert("Perintah shutdown dikirim");
+  }
+}
+</script>
+</body>
+</html>
